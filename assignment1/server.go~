@@ -12,6 +12,7 @@ var fileMap map[string]FileStore
 type FileStore struct {
 fileContent [2000]byte
 file_version int64
+expire_time int16
 }
 
 
@@ -55,6 +56,8 @@ func spawnRequestHandler(conn net.Conn) {
 /*
 
 to perform parsing and storing of the file in a map
+
+file name as the key and other parameters in the structure
 
 */
 

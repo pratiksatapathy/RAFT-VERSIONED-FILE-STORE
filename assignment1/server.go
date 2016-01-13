@@ -29,7 +29,7 @@ func serverMain(){
     }
 
     defer listenerVar.Close() //delayed close
-    fmt.Println("server started at port : " + CONN_PORT)
+    fmt.Println("server started at port 8080")
     for {//infinite loop
         
         connVar, errVar := listenerVar.Accept()
