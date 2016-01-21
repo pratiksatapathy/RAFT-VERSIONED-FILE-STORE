@@ -39,9 +39,13 @@ RESPONSE:```OK\r\n```
 
 ####ERROR CODES:
 1.ERR_VERSION - Content specified in cas doesnt match with the version of the file
+
 2.ERR_FILE_NOT_FOUND - File with the provide name doesnt exist or has expired
+
 3.ERR_CMD_ERR - Command provided is not in proper format
+
 4.ERR_INTERNAL - internal server error
+
 
 UNIT TEST 
 ----------
