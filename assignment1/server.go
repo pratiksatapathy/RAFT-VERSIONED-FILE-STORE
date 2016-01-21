@@ -20,7 +20,6 @@ const (
 	CAS = "cas"
 	READ = "read"
 	DELETE = "delete"
-
 )
 type fileAttr struct {
 	filestatus bool
@@ -43,7 +42,7 @@ func serverMain() {
 	MutX = &sync.Mutex{}
 
 	//defer listenerVar.Close() //delayed close
-	fmt.Println("server started at port 8080")
+	//fmt.Println("server started at port 8080")
 	for {//infinite loop
 
 		connVar, errVar := listenerVar.Accept()
@@ -64,7 +63,7 @@ func readFromConnection(conn net.Conn) (data []byte) {
 		count, err := conn.Read(small_buf)
 		if err != nil {
 			if err != io.EOF {
-				fmt.Println("read error:", err)
+				//fmt.Println("read error:", err)
 				return []byte("")
 			}
 			break
@@ -87,7 +86,7 @@ func spawnRequestHandler(conn net.Conn) {
 
 		outbounddata, unprocessd := parseIncomingData(dataMaster, conn)
 		fmt.Fprintf(conn, string(outbounddata))
-		fmt.Println("outbound data: " + string(outbounddata))
+		//fmt.Println("outbound data: " + string(outbounddata))
 
 		unprocessd = append(unprocessd, readFromConnection(conn)...)
 		if string(unprocessd[:2]) == "\r\n" && len(unprocessd) > 2 {
@@ -96,11 +95,11 @@ func spawnRequestHandler(conn net.Conn) {
 		}else {
 			if string(unprocessd[:2]) == "\r\n" && len(unprocessd) == 2 {
 				unprocessd = unprocessd[:0]
-				fmt.Println("connection closed")
+				//fmt.Println("connection closed")
 				conn.Close()
 			}else {
 				conn.Write([]byte("ERR_INTERNAL\r\n"))
-				fmt.Println("connection closed")
+				//fmt.Println("connection closed")
 				conn.Close()
 			}
 
@@ -148,7 +147,7 @@ func readFileFromStore(filename string) (filestatus bool, file_ver string, file_
 	fileContent, e := synchronisedFIleHandling(filename, []byte(""), true) //read request:true
 
 	if e != nil {//file not found condition
-		fmt.Println(e.Error())
+		//fmt.Println(e.Error())
 		return false, "", "", "", "", ""
 	}
 
@@ -243,9 +242,9 @@ func criticalReadWrite(filename string, totalbytes int, expiretime string, child
 	return response
 }
 func criticalSectionBlockForWRTnRD(vers string, filename string, totalbytes int, expiretime string, childdataStream []byte) (response []byte,fileattrStuc fileAttr) {
-	fmt.Println(vers+" --------- "+filename)
+	//fmt.Println(vers+" --------- "+filename)
 	MutX.Lock()
-	fmt.Print("entered \n")
+	//fmt.Print("entered \n")
 
 	if vers == "NA" { //NOT APPLICABLE IN WRITE
 		response = criticalReadWrite(filename, totalbytes, expiretime, childdataStream)
@@ -267,7 +266,7 @@ func criticalSectionBlockForWRTnRD(vers string, filename string, totalbytes int,
 	}else {
 		response = casCriticalRW(vers, filename, totalbytes, expiretime, childdataStream)
 	}
-	fmt.Print("exited \n")
+	//fmt.Print("exited \n")
 	MutX.Unlock()
 	return response,fileattrStuc
 }
@@ -315,7 +314,7 @@ func synchronisedFIleHandling(filename string, data []byte, isRead bool) (fileCo
 }
 func readFile(filename string) (fileContent []byte, e error) {
 	fileContent, e = ioutil.ReadFile(filename)
-	fmt.Println(string(fileContent))
+	//fmt.Println(string(fileContent))
 	//check(e)
 	return fileContent, e
 
