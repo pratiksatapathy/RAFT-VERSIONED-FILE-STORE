@@ -14,35 +14,34 @@ Usage
 The project supports READ, WRITE, COMPARE AND SWAP AND DELETE OPERATION
 
 
-WRITE SYNTAX:
-REQUEST:write filename numbytes [exptime]\r\n<content bytes>\r\n
+####WRITE SYNTAX:
+  REQUEST:```write filename numbytes [exptime]\r\n<content bytes>\r\n```
 
-RESPONSE:OK version\r\n
+  RESPONSE:```OK version\r\n```
 
-READ SYNTAX:
+####READ SYNTAX:
+  REQUEST:```read filename\r\n```
 
-REQUEST:read filename\r\n
+  RESPONSE:```CONTENTS version numbytes exptime> \r\n<content bytes>\r\n```
 
-RESPONSE:CONTENTS version numbytes exptime> \r\n<content bytes>\r\n
+####COMPARE AND SWAP SYNTAX:
 
-COMPARE AND SWAP SYNTAX:
+REQUEST:```cas filename version numbytes exptime\r\ncontent_bytes\r\n```
 
-REQUEST:cas filename version numbytes exptime\r\ncontent_bytes\r\n
+RESPONSE:```OK version\r\n```
 
-RESPONSE:OK version\r\n
+####DELETE SYNTAX:
 
-DELETE SYNTAX:
+REQUEST:```delete filename\r\n```
 
-REQUEST:delete filename\r\n
-
-RESPONSE:OK\r\n
+RESPONSE:```OK\r\n```
 
 
-ERROR CODES:
-ERR_VERSION - Content specified in cas doesnt match with the version of the file
-ERR_FILE_NOT_FOUND - File with the provide name doesnt exist or has expired
-ERR_CMD_ERR - Command provided is not in proper format
-ERR_INTERNAL - internal server error
+####ERROR CODES:
+1.ERR_VERSION - Content specified in cas doesnt match with the version of the file
+2.ERR_FILE_NOT_FOUND - File with the provide name doesnt exist or has expired
+3.ERR_CMD_ERR - Command provided is not in proper format
+4.ERR_INTERNAL - internal server error
 
 UNIT TEST 
 ----------
