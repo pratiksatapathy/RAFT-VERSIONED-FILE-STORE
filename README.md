@@ -1,6 +1,25 @@
 # cs733
 cs 733 project
 
+#THE RAFT STATE MACHINE
+
+Description
+-----------
+
+The raft state machine is built on the principles provided in the paper ``` In Search of an Understandable Consensus Algorithm (Extended Version) by Diego Ongaro and John Ousterhout. ``` 
+
+This state machine covers only the protocol part of the consensus algorithm and doesnt implement network disk io.
+
+
+UNIT TEST 
+----------
+Unit test provided with the package checks for a 100% code coverage , that ensures correctness of all scenarios .The test also demonstrates that the implementation is race free.
+
+Future work
+-----------
+Future work will have the uper layer involving Network and Disk io which will use the raft state machine in its core.
+
+
 Description
 -----------
 
