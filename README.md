@@ -1,5 +1,5 @@
 # cs733
-cs 733 project
+cs 733 project (UPDATE 2.0)
 
 #THE RAFT STATE MACHINE
 
@@ -19,6 +19,10 @@ Future work
 -----------
 Future work will have the uper layer involving Network and Disk io which will use the raft state machine in its core.
 
+
+cs 733 project (UPDATE 1.0)
+
+#PREVIOUS WORK 
 
 Description
 -----------
