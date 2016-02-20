@@ -19,10 +19,16 @@ Future work
 -----------
 Future work will have the uper layer involving Network and Disk io which will use the raft state machine in its core.
 
-
+***
+***
+***
+***
+***
+___
+___
 cs 733 project (UPDATE 1.0)
 
-#PREVIOUS WORK 
+#VERSION FILE STORE 
 
 Description
 -----------
