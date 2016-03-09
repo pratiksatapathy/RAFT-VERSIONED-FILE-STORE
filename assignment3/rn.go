@@ -62,7 +62,7 @@ func makeRafts(configs []Config) (rafts []RaftNode) {
 	return rafts
 }
 
-func startNewRaftNode(config Config) (node *RaftNode) {
+func startNewRaftNode(config Config) (node RaftNode) {
 
 	//create state machine in follower mode
 	node.initializeStateMachine(config)
