@@ -23,7 +23,7 @@ type RaftNode struct { // implements Node interface
 	Cluster       []NetConfig
 	LastAlarm     time.Time
 	StopSignal    bool
-	LogDir string
+	LogDir        string
 }
 type CommitInfo struct {
 
@@ -49,7 +49,20 @@ type NetConfig struct {
 	Port int
 }
 
-func startNewRaftNode(config Config) (node RaftNode) {
+//starting point
+func makeRafts(configs []Config) (rafts []RaftNode) {
+
+
+	for _, element := range configs {
+
+		rafts = append(rafts, startNewRaftNode(element))
+
+	}
+
+	return rafts
+}
+
+func startNewRaftNode(config Config) (node *RaftNode) {
 
 	//create state machine in follower mode
 	node.initializeStateMachine(config)
@@ -122,7 +135,7 @@ func (rn *RaftNode) initializeVoteAndTerm(config Config) {
 }
 func (rn *RaftNode) writeVoteAndTerm(state_SM STATE_STORE) {
 
-		ioutil.WriteFile(rn.LogDir + "/termNvote", []byte(fmt.Sprintf("%s:%s", state_SM.term, state_SM.voteFor)), 0644)
+	ioutil.WriteFile(rn.LogDir + "/termNvote", []byte(fmt.Sprintf("%s:%s", state_SM.term, state_SM.voteFor)), 0644)
 
 }
 func (rn *RaftNode) initializeStateMachine(config Config) {
@@ -150,17 +163,17 @@ func (rn *RaftNode) startTimer() {
 		}
 
 
-//		if rn.Sm.state == LEADER {
-//
-//			if time.Now().After(rn.LastAlarm.Add(rn.Sm.heartbeat_time_out * time.Second)) {
-//				rn.TimeoutCh <- TIMEOUT{}
-//			}
-//		}else {
-//
-//			if time.Now().After(rn.LastAlarm.Add(rn.Sm.election_time_out * time.Second)) {
-//				rn.TimeoutCh <- TIMEOUT{}
-//			}
-//		}
+		//		if rn.Sm.state == LEADER {
+		//
+		//			if time.Now().After(rn.LastAlarm.Add(rn.Sm.heartbeat_time_out * time.Second)) {
+		//				rn.TimeoutCh <- TIMEOUT{}
+		//			}
+		//		}else {
+		//
+		//			if time.Now().After(rn.LastAlarm.Add(rn.Sm.election_time_out * time.Second)) {
+		//				rn.TimeoutCh <- TIMEOUT{}
+		//			}
+		//		}
 
 		if rn.StopSignal {
 			return
@@ -171,8 +184,17 @@ func (rn *RaftNode) startTimer() {
 
 func (rn *RaftNode) startListening() {
 	for {
-		env := <- rn.MsgBoxHandler.Inbox()
-		fmt.Printf("[From: %d MsgId:%d] %s\n", env.Pid, env.MsgId, env.Msg)
+		env := <-rn.MsgBoxHandler.Inbox()
+
+		var container interface{}
+		json.Unmarshal(env.Msg, &container)
+
+
+		rn.EventCh <- container
+
+		//to continue from this point.....XXX
+
+		//fmt.Printf("[From: %d MsgId:%d] %s\n", env.Pid, env.MsgId, env.Msg)
 
 		if rn.StopSignal {
 			return
@@ -270,31 +292,31 @@ func (rn *RaftNode) doActions(actions []interface{}) {
 
 func (rn *RaftNode) forwardVoteRequest(vrq_SM VOTE_REQUEST) {
 
-	rn.MsgBoxHandler.Outbox()<- &cluster.Envelope{Pid: vrq_SM.To_CandidateId, Msg: []byte(json.Marshal(vrq_SM))}
+	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: vrq_SM.To_CandidateId, Msg: []byte(json.Marshal(vrq_SM))}
 
 
 }
 
 func (rn *RaftNode) forwardVoteResponse(vr_SM VOTE_RESPONSE) {
 
-	rn.MsgBoxHandler.Outbox()<- &cluster.Envelope{Pid: vr_SM.To_CandidateId, Msg: []byte(json.Marshal(vr_SM))}
+	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: vr_SM.To_CandidateId, Msg: []byte(json.Marshal(vr_SM))}
 
 }
 func (rn *RaftNode) forwardAppendEntriesRequest(arq_SM APPEND_ENTRIES_REQUEST) {
 
-	rn.MsgBoxHandler.Outbox()<- &cluster.Envelope{Pid: arq_SM.To_CandidateId, Msg: []byte(json.Marshal(arq_SM))}
+	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: arq_SM.To_CandidateId, Msg: []byte(json.Marshal(arq_SM))}
 
 
 }
 func (rn *RaftNode) forwardAppendEntriesResponse(ars_SM APPEND_ENTRIES_RESPONSE) {
 
-	rn.MsgBoxHandler.Outbox()<- &cluster.Envelope{Pid: ars_SM.To_CandidateId, Msg: []byte(json.Marshal(ars_SM))}
+	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: ars_SM.To_CandidateId, Msg: []byte(json.Marshal(ars_SM))}
 
 
 }
 func (rn *RaftNode) forwardToClient(cmt_to_c COMMIT_TO_CLIENT) {
 
-	rn.CommitChan <-cmt_to_c
+	rn.CommitChan <- cmt_to_c
 
 }
 func (rn *RaftNode) saveToLog(lg_SM SERVER_LOG_DATASTR) {
