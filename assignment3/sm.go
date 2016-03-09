@@ -16,6 +16,7 @@ func (thisServer *SERVER_DATA) processEvent(incoming interface{})(actions[]inter
 	noactions := make([]interface{},0)
 	noactions = append(noactions,NO_ACTION{})
 
+
 	switch{
 	case reflect.TypeOf(incoming) == reflect.TypeOf(VOTE_REQUEST{}):
 		return thisServer.voteRequest(incoming.(VOTE_REQUEST))
