@@ -18,7 +18,7 @@ Systems starts up with 5 node initialization with some configuration and partiti
 
 System stabilises with a leader and gets ready to accept any append request from the client, as soon as the client sends a message, raft system logs it and replicates it with all nodes and also sends out commit flags once its replicated on that respective node.
 
-Raft expose API
+Raft Exposed API
 ---------------
 ```
 
@@ -51,7 +51,7 @@ Shutdown()
 ```
 
 
-UNIT TEST 
+Unit Tests
 ----------
 **State machine test**
 
