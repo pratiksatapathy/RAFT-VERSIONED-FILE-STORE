@@ -1546,5 +1546,4 @@ func TestCommitIndex(t *testing.T) { //check resulting commit index on different
 
 
 
-
 }
