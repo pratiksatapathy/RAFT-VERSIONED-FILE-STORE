@@ -660,3 +660,4 @@ func (thisServer *SERVER_DATA) append(data []byte) (actions []interface{}) {
 
 	return actions
 }
+
