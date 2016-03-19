@@ -1,4 +1,5 @@
 package main
+import "sync"
 
 //all structures
 
@@ -22,6 +23,8 @@ type SERVER_DATA struct {
 	term                   int64
 	candidateId            int64
 	candidates             []int64
+
+	MutX_SM *sync.Mutex
 
 	election_time_out      int64
 	heartbeat_time_out     int64                        //used as a marker for map length
