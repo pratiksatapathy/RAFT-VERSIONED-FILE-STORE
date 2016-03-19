@@ -1,5 +1,4 @@
 package main
-import "math/rand"
 
 //all structures
 
@@ -7,6 +6,7 @@ const (
 	CANDIDATE = 0
 	LEADER = 1
 	FOLLOWER = 2
+	UNDEF = -5
 	NONE = -1  //const for votedfor=nil
 	ELECTION_TIMEOUT_VALUE = 30
 	HEARTBEAT_TIMEOUT_VALUE = 20
@@ -30,6 +30,7 @@ type SERVER_DATA struct {
 	leaderId               int64
 	state                  int8
 	votedFor               int64
+	temp					int64
 	LOG                    map[int64]SERVER_LOG_DATASTR //needs initialization //here key is the index
 
 	//assumption that whena server starts fresh at data center establishent then it contains a log at index 0 with {term:0,index:0,data:x}
@@ -178,6 +179,8 @@ func (thisServer *SERVER_DATA) LogIsNotMoreUpdatedThan(incmngReq VOTE_REQUEST) (
 
 func (thisServer *SERVER_DATA) SomeLastLogIsSameAs(incmngReq APPEND_ENTRIES_REQUEST) (resp bool) {
 
+	thisServer.debug_output2("server56",thisServer.LOG)
+	thisServer.debug_output2("req",incmngReq)
 
 	if thisServer.LOG[incmngReq.LeaderLastLog.Index].Term == incmngReq.LeaderLastLog.Term {
 		resp = true
@@ -186,6 +189,7 @@ func (thisServer *SERVER_DATA) SomeLastLogIsSameAs(incmngReq APPEND_ENTRIES_REQU
 		resp = false
 	}
 
+	thisServer.debug_output2("req response:..",resp)
 	return resp
 }
 
@@ -224,10 +228,12 @@ func (thisServer *SERVER_DATA) hasNotVoted() (resp bool) {
 }
 
 //rndomizing timeouts
-func (thisServer *SERVER_DATA) randomizeTimeout() {
-
-	thisServer.election_time_out = int64(rand.Float32() * float32(thisServer.election_time_out))
-}
+//func (thisServer *SERVER_DATA) randomizeTimeout() {
+//
+//	a := int64(rand.Float32() * float32(thisServer.election_time_out))
+//	a = a
+//	//thisServer.election_time_out = int64(rand.Float32() * float32(thisServer.election_time_out))
+//}
 
 
 //log adding function to add as next log ntry and increase last log index
