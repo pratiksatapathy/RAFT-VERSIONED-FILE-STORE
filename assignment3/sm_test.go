@@ -398,6 +398,50 @@ voteResp := (ret[1]).(VOTE_RESPONSE) //assertion
 		t.Error(voteResp)
 	}
 }
+func TestVoteRequestToCandidate3(t *testing.T) { //term is same but candidate is more updated than the incoming request
+
+	//BASIC MACHINE SETUP
+
+	var svr SERVER_DATA
+	svr.setBasicMachine()
+
+
+	//TEST STATE SETUP
+
+	svr.state = CANDIDATE;
+	svr.term = 1;
+	svr.lastLogIndex = 0
+
+	svr.addThisEntry(SERVER_LOG_DATASTR{Index:1,Term:1,Data:[]byte("cmd1")})
+	svr.addThisEntry(SERVER_LOG_DATASTR{Index:2,Term:2,Data:[]byte("cmd1")})
+	svr.addThisEntry(SERVER_LOG_DATASTR{Index:3,Term:2,Data:[]byte("cmd1")})
+	svr.debug_output2("lastlog\n",svr.lastLogIndex)
+	svr.votedFor = svr.candidateId
+
+	//PREPARE EVENT
+	var voteReqObject VOTE_REQUEST
+	voteReqObject.ElectionTerm = 3
+	voteReqObject.From_CandidateId = 3
+	voteReqObject.MyLastLog  = SERVER_LOG_DATASTR{Index:2,Term:2,Data:[]byte("cmd1")}
+
+
+	ret := svr.processEvent(voteReqObject)
+	if reflect.TypeOf(ret[0]) != reflect.TypeOf(STATE_STORE{}){
+		t.Error("unexpected")
+	}
+
+	voteResp := (ret[1]).(VOTE_RESPONSE) //assertion
+
+	if 	voteResp.Voted == false &&
+	voteResp.From_CandidateId == 1 &&
+	voteResp.To_CandidateId == 3 &&
+	svr.state == CANDIDATE {
+
+		//this is expected
+	}else {
+		t.Error(voteResp)
+	}
+}
 
 func TestAppendEntriesRequestToFollower(t *testing.T) { //reject entries from an older term
 
@@ -1225,10 +1269,11 @@ var svr SERVER_DATA
 
 	}
 
-	cmt := (ret[1]).(COMMIT_TO_CLIENT) //assertion
-	if cmt.Index != svr.commitIndex {
-		t.Error(cmt)
-	}
+	//removed as part of logic change
+//	cmt := (ret[1]).(COMMIT_TO_CLIENT) //assertion
+//	if cmt.Index != svr.commitIndex {
+//		t.Error(cmt)
+//	}
 
 //now the follower is sent a previous log as it said false the last time  [2,2](previndex [1,1])
 //so server sendds
@@ -1253,10 +1298,10 @@ var svr SERVER_DATA
 		t.Error(appendReq.LogToAdd,temp)
 
 	}
-	cmt = (ret[1]).(COMMIT_TO_CLIENT) //assertion
-	if cmt.Index != svr.commitIndex {
-		t.Error(cmt)
-	}
+//	cmt = (ret[1]).(COMMIT_TO_CLIENT) //assertion
+//	if cmt.Index != svr.commitIndex {
+//		t.Error(cmt)
+//	}
 
 }
 
