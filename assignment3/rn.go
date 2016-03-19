@@ -12,14 +12,17 @@ import (
 //"os"
 	"sync"
 	"github.com/cs733-iitb/cluster/mock"
+	"os"
 )
+
+//mutex declaration for leaderfind function
 
 var MutX_findLeader *sync.Mutex
 var MutX_getcandidatearray *sync.Mutex
 var MutX_processEvent *sync.Mutex
 
 
-
+//raft node structures
 type RaftNode struct { // implements Node interface
 
 	EventCh       chan interface{}
@@ -40,13 +43,6 @@ type RaftNode struct { // implements Node interface
 	StopSignal    bool
 	LogDir        string
 }
-//type CommitInfo struct {
-//
-//	Data  []byte
-//	Index int64 // or int .. whatever you have in your code
-//	Err   error
-//}
-
 type Config struct {
 
 	Cluster          []NetConfig // Information about all servers, including this.
@@ -64,118 +60,29 @@ type NetConfig struct {
 	Port int
 }
 
-//starting point
+//custom debug log
+func (rn *RaftNode) debug_output2(s string, i interface{}) {
 
-//func debug_output(i interface{}) {
-//
-//
-//	//	fmt.Print(i)
-//	//	fmt.Println()
-//}
-//func (rn *RaftNode) debug_output3(s string, i interface{}) {
-//	//logit(rn.LogDir, fmt.Sprintln(i))
-//}
-//func (rn *RaftNode) debug_output2(s string, i interface{}) {
-//
-//
-//
-//	//	//logit(rn.LogDir,fmt.Sprint("**********NOde Id:"))
-//	//	//logit(rn.LogDir,fmt.Sprint(rn.Sm.candidateId))
-//	//	logit(rn.LogDir, fmt.Sprint(s))
-//	//	logit(rn.LogDir, fmt.Sprintln(i))
-//	//	//logit(rn.LogDir,fmt.Sprint())
-//	//	//logit(rn.LogDir,fmt.Sprint("********end********"))
-//
-//}
-//
-///*
-//func (rn *RaftNode) debug_output2(s string,i interface{} ){
-//
-//	//return
-//
-//	fmt.Print("**********NOde Id:")
-//	fmt.Println(rn.Sm.candidateId)
-//	fmt.Print(s)
-//	fmt.Print(i)
-//	fmt.Println()
-//	fmt.Println("********end********")
-//
-//}
-//*/
-//func (rn *RaftNode) debug_output_act(s string, i []interface{}) {
-//
-//
-//
-////	//logit(rn.LogDir,fmt.Sprintln("******"))
-////	//logit(rn.LogDir,fmt.Sprintln(rn.Sm.candidateId))
-////	logit(rn.LogDir, fmt.Sprintln(s))
-////	for _, element := range i {
-////
-////		logit(rn.LogDir, fmt.Sprint(reflect.TypeOf(element)))
-////		logit(rn.LogDir, fmt.Sprint(element))
-////		//logit(rn.LogDir,fmt.Sprint(","))
-////		break
-////	}
-////
-//	//logit(rn.LogDir,fmt.Sprintln())
-//	//logit(rn.LogDir,fmt.Sprintln("*****"))
-//
-//
-//}
+	//logit(rn.LogDir, fmt.Sprint(s))
+	//logit(rn.LogDir, fmt.Sprintln(i))
 
-//func debug_output2(s string, i interface{}) {
-//
-//
-////
-////	fmt.Print(s)
-////	fmt.Print(i)
-////	fmt.Println()
-////	fmt.Println("***")
-//
-//}
-//func logit(filename string, text string) {
-//	//return
-//	f, err := os.OpenFile(filename + ".txt", os.O_APPEND | os.O_WRONLY, 0600)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	defer f.Close()
-//
-//	if _, err = f.WriteString(text); err != nil {
-//		panic(err)
-//	}
-//
-//}
-//func main23() {
-//	var wg sync.WaitGroup
-//
-//	wg.Add(1)
-//	//fmt.Print("kyazoonga")
-//	clconfig := cluster.Config{Peers:[]cluster.PeerConfig{
-//		{Id:1}, {Id:2}, {Id:3}, {Id:4}, {Id:5},
-//	}}
-//	cluster, err := mock.NewCluster(clconfig)
-//
-//	cluster.Partition([]int{1, 2, 3}, []int{4, 5}) // Cluster partitions into two.
-//
-//
-//	rafts := rafter2(cluster) // array of []raft.Node
-//
-//	time.Sleep(10 * time.Second)
-//	(rafts[findLeader(rafts) - 1]).Append([]byte("foo"))
-//	time.Sleep(20 * time.Second)
-//	cluster.Heal()
-//	time.Sleep(10 * time.Second)
-//	fmt.Println("healeddddddddddddddddddddddddddddd\n")
-//
-//	(rafts[findLeader(rafts) - 1]).Append([]byte("bar"))
-//
-//	check(err)
-//	wg.Wait()
-//
-//	//rafter()
-//}
+}
+
+func logit(filename string, text string) {
+	//return
+	f, err := os.OpenFile(filename + ".txt", os.O_APPEND | os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(text); err != nil {
+		panic(err)
+	}
+
+}
+
 func rafter(mck *mock.MockCluster) ([]RaftNode) {
 
 	MutX_findLeader = &sync.Mutex{}
@@ -187,14 +94,12 @@ func rafter(mck *mock.MockCluster) ([]RaftNode) {
 	registerAllStructures();
 
 	var netconfigs []NetConfig
-	//netconfigs = append(netconfigs,NetConfig{Id:1,Host:"localhost",Port:8001})
 
 	netconfigs = []NetConfig{NetConfig{Id:1, Host:"localhost", Port:8001},
 		NetConfig{Id:2, Host:"localhost", Port:8002},
 		NetConfig{Id:3, Host:"localhost", Port:8003},
 		NetConfig{Id:4, Host:"localhost", Port:8004},
 		NetConfig{Id:5, Host:"localhost", Port:8005}}
-	//debug_output(netconfigs)
 
 	var configs []Config
 
@@ -204,7 +109,6 @@ func rafter(mck *mock.MockCluster) ([]RaftNode) {
 		Config{Cluster:netconfigs, Id:4, LogDir:"dir4", ElectionTimeout:2200, HeartbeatTimeout:500},
 		Config{Cluster:netconfigs, Id:5, LogDir:"dir5", ElectionTimeout:2100, HeartbeatTimeout:500}}
 
-	//var rafts []RaftNode
 	rafts := makeRaftNodes(configs, mck);
 
 
@@ -226,117 +130,10 @@ func rafter(mck *mock.MockCluster) ([]RaftNode) {
 }
 
 
-//func rafter2(mck *mock.MockCluster) ([]RaftNode) {
-//
-//	fmt.Print("===========\n")
-//	fmt.Println(reflect.TypeOf(mck))
-//	debug_output(mck)
-//
-//
-//	registerAllStructures();
-//
-//	var netconfigs []NetConfig
-//	//netconfigs = append(netconfigs,NetConfig{Id:1,Host:"localhost",Port:8001})
-//
-//	netconfigs = []NetConfig{NetConfig{Id:1, Host:"localhost", Port:8001},
-//		NetConfig{Id:2, Host:"localhost", Port:8002},
-//		NetConfig{Id:3, Host:"localhost", Port:8003},
-//		NetConfig{Id:4, Host:"localhost", Port:8004},
-//		NetConfig{Id:5, Host:"localhost", Port:8005}}
-//	debug_output(netconfigs)
-//
-//
-//	var configs []Config
-//
-//	configs = []Config{Config{Cluster:netconfigs, Id:1, LogDir:"dir1", ElectionTimeout:6, HeartbeatTimeout:1},
-//		Config{Cluster:netconfigs, Id:2, LogDir:"dir2", ElectionTimeout:6, HeartbeatTimeout:1},
-//		Config{Cluster:netconfigs, Id:3, LogDir:"dir3", ElectionTimeout:6, HeartbeatTimeout:1},
-//		Config{Cluster:netconfigs, Id:4, LogDir:"dir4", ElectionTimeout:7, HeartbeatTimeout:1},
-//		Config{Cluster:netconfigs, Id:5, LogDir:"dir5", ElectionTimeout:7, HeartbeatTimeout:1}}
-//
-//
-//	//var rafts []RaftNode
-//	rafts := makeRaftNodes(configs, mck);
-//
-//	//fmt.Println(rafts)
-//
-//	//	var wg sync.WaitGroup
-//	//
-//	//	wg.Add(1)
-//	rafts[0].startOperation()
-//	rafts[1].startOperation()
-//	rafts[2].startOperation()
-//	rafts[3].startOperation()
-//	rafts[4].startOperation()
-//
-//	time.Sleep(time.Second * 10)
-//
-//	//	rafts[findLeader(rafts) - 1].Append([]byte("cmd1"))
-//	//	time.Sleep(time.Millisecond * 1000)
-//	//	time.Sleep(time.Second * 50)
-//	//	(rafts[findLeader(rafts) - 1]).Append([]byte("foo"))
-//	//	rafts[findLeader(rafts) - 1].Append([]byte("cmd2"))
-//	//	time.Sleep(time.Millisecond * 1000)
-//	//	rafts[findLeader(rafts) - 1].Append([]byte("cmd3"))
-//	//	time.Sleep(time.Millisecond * 1000)
-//	//	rafts[findLeader(rafts) - 1].Append([]byte("cmd4"))
-//
-//
-//	//time.Sleep(time.Second * 10)
-//
-//
-//	//	time.Sleep(time.Second * 10)
-//	//	fmt.Println("=====================================================================")
-//	//	fmt.Println(rafts[0].Sm.leaderId)
-//	//	rafts[findLeader(rafts)-1].ShutDown()
-//	//
-//	//	time.Sleep(time.Second * 10)
-//	//	fmt.Println("=====================================================================")
-//	//	fmt.Println(rafts[0].Sm.leaderId)
-//	//	rafts[findLeader(rafts)-1].ShutDown()
-//	//
-//	//
-//	//	time.Sleep(time.Second * 10)
-//	//	fmt.Println("=====================================================================")
-//	//	fmt.Println(rafts[0].Sm.leaderId)
-//	//	rafts[findLeader(rafts)-1].ShutDown()
-//	//
-//	//
-//	//	time.Sleep(time.Second * 20)
-//	//
-//	//
-//	//	for i:=0;i<len(rafts);i++ {
-//	//		if rafts[i].StopSignal == true{
-//	//
-//	//			time.Sleep(time.Second * 20)
-//	//			rafts[i].StopSignal = false
-//	//			rafts[i].startOperation()
-//	//
-//	//		}
-//	//
-//	//	}
-//	//
-//	//	for _, element := range rafts {
-//	//
-//	//		if element.StopSignal == true{
-//	//
-//	//			time.Sleep(time.Second * 20)
-//	//			element.StopSignal = false
-//	//			element.startOperation()
-//	//
-//	//		}
-//	//
-//	//	}
-//	//
-//	//
-//	//
-//
-//	//wg.Wait()
-//	return rafts
-//}
-
 //function to determine the leader, we are also checking that if in a partition environment there are two
 // leader then only the latest term leader is chosen as the leader
+
+//function waits till leader appears
 func findLeader(rafts []RaftNode) (index int) {
 
 	MutX_findLeader.Lock()
@@ -363,10 +160,10 @@ func findLeader(rafts []RaftNode) (index int) {
 			}
 
 		}
-		if index != UNDEF{
-				//fmt.Println("leader mila ")
+		if index != UNDEF {
+			//fmt.Println("leader mila ")
 			break
-		}else{
+		}else {
 			//fmt.Print(".. ")
 		}
 	}
@@ -374,6 +171,8 @@ func findLeader(rafts []RaftNode) (index int) {
 	return int(index)
 
 }
+
+//start object portion of the raft nodes by consuming configs and mock cluster
 func makeRaftNodes(configs []Config, mck *mock.MockCluster) (rafts []RaftNode) {
 
 	//var node RaftNode
@@ -410,14 +209,7 @@ func startNewRaftNode(config Config, mck *mock.MockCluster) (node RaftNode) {
 	//read term and vote
 	node.initializeVoteAndTerm(config)
 
-	//assign the cluster
-	//node.Cluster = config.Cluster
 
-	//node.debug_output2("setup complete", "")
-
-
-	//for{}
-	//	wg.Done()
 	return node
 }
 
@@ -439,37 +231,27 @@ func (rn *RaftNode) initializeLog(config Config) {
 
 	handler, err := log.Open(config.LogDir + "/raftlog")
 	rn.LogHandler = handler
-		fmt.Println("chk442\n")
 	check(err)
-		fmt.Println("chk444\n")
 
-	//rn.debug_output2("1:log object completed", rn.LogHandler)
-	//rn.debug_output2("1:lastindex", rn.LogHandler.GetLastIndex())
 	if rn.LogHandler.GetLastIndex() == -1 { //log is absolutely empty
 
 		rn.LogHandler.Append(SERVER_LOG_DATASTR{Index:0, Term:0, Data:[]byte("")})
 	}
 
-	//rn.debug_output2("2:log object completed", rn.LogHandler)
-	//rn.debug_output2("2:lastindex", rn.LogHandler.GetLastIndex())
 }
+//read from storage to the state machine memory log
 func (rn *RaftNode) readLogsToStateMachine(config Config) {
 	//return
 	lastIndex := rn.LogHandler.GetLastIndex()
 
 	counter := int64(0)
-	//var err error
 	for counter = 0; counter <= lastIndex; counter++ {
 
 		lg, err := rn.LogHandler.Get(counter)
 		check(err)
-		//rn.debug_output2("what in storage", lg)
 		rn.Sm.LOG[counter] = lg.(SERVER_LOG_DATASTR)
 
 	}
-	//debug_output("log reading:")
-	//rn.debug_output2("recovered log", rn.Sm.LOG)
-
 
 }
 func check(err error) {
@@ -479,6 +261,7 @@ func check(err error) {
 	}
 
 }
+//registering all structures
 func registerAllStructures() {
 
 	gob.Register(VOTE_REQUEST{})
@@ -487,6 +270,8 @@ func registerAllStructures() {
 	gob.Register(APPEND_ENTRIES_RESPONSE{})
 	gob.Register(SERVER_LOG_DATASTR{})
 }
+
+//initializing the mock cluster messg box
 func (rn *RaftNode) initializeMessageBox(config Config, mck *mock.MockCluster) {
 
 
@@ -495,8 +280,8 @@ func (rn *RaftNode) initializeMessageBox(config Config, mck *mock.MockCluster) {
 
 	//rn.debug_output2("raftermsg:", len(mck.Servers))//
 
+	//getting out the server pertaining to that candidate from the mock_cluster
 	rn.MsgBoxHandler = mck.Servers[int(rn.Sm.candidateId)]
-
 
 	check(err)
 
@@ -504,13 +289,9 @@ func (rn *RaftNode) initializeMessageBox(config Config, mck *mock.MockCluster) {
 
 func (rn *RaftNode) initializeVoteAndTerm(config Config) {
 
-
-
 	fileContent, e := ioutil.ReadFile(config.LogDir + "/termNvote.txt")
-	//rn.logHandler = log.Open(config.logDir + "/raftlog")
 
-
-	if e == nil {
+	if e == nil {//states are present previously
 
 
 		arr := strings.Split(string(fileContent), ":")
@@ -529,9 +310,6 @@ func (rn *RaftNode) initializeVoteAndTerm(config Config) {
 		rn.Sm.term = 0
 		rn.Sm.votedFor = 0
 	}
-	//debug_output("votedir done")
-	//debug_output(rn.Sm.term)
-	//debug_output(rn.Sm.votedFor)
 
 }
 func (rn *RaftNode) writeVoteAndTerm(state_SM STATE_STORE) {
@@ -545,22 +323,18 @@ func (rn *RaftNode) initializeStateMachine(config Config) {
 
 	rn.LogDir = config.LogDir
 
+	rn.Sm.MutX_SM = &sync.Mutex{}
 	rn.Sm.candidateId = int64(config.Id)
 	//rn.debug_output2("*********Node coming up********", "")
 	rn.Sm.state = FOLLOWER
-	rn.LastAlarm = time.Now()
-	//svr.leaderId = 3
-	//config.cluster
+	rn.LastAlarm = time.Now()//timer resets
+
 	rn.Sm.candidates = getCandidateIdArray(config) //return candidate array from config netconfig[] array
-	//	debug_output(rn.Sm.candidates)
-	//	rn.Sm.candidates = []int64{1, 2, 3, 4, 5}
-	//svr.commitIndex =
-	rn.Sm.election_time_out = config.ElectionTimeout; //secs
-	rn.Sm.heartbeat_time_out = config.HeartbeatTimeout; //secs
+
+	rn.Sm.election_time_out = config.ElectionTimeout; //mili secs
+	rn.Sm.heartbeat_time_out = config.HeartbeatTimeout; //mili secs
 
 	rn.Sm.LOG = make(map[int64]SERVER_LOG_DATASTR)
-	//svr.addThisEntry(SERVER_LOG_DATASTR{index:0,term:0,data:[]byte("")}) // dummy log at zeroth index on all servers that are starting up
-
 
 	//debug_output("state machine completed")
 
@@ -575,16 +349,9 @@ func (rn *RaftNode) initializeStateMachine(config Config) {
 func (rn *RaftNode) startTimer() {
 
 
-	//rn.debug_output2("timer started..", "")
+	rn.debug_output2("timer started..", "")
 	rn.LastAlarm = time.Now()
 	for {
-
-		//to have a stop mark at shutdown
-		//to have a lock for concurrency control
-
-		//		if time.Now().After(rn.LastAlarm.Add(rn.Sm.heartbeat_time_out * time.Second)) {
-		//			rn.TimeoutCh <- TIMEOUT{}
-		//		}
 
 
 		if rn.Sm.state == LEADER {
@@ -618,30 +385,14 @@ func (rn *RaftNode) startTimer() {
 func (rn *RaftNode) startListening() {
 
 
-	//rn.debug_output2("listening loop started..", "")
+	rn.debug_output2("listening loop started..", "")
 
 
 	for {
-		//rn.debug_output2("node listening","")
-		//rn.debug_output2("node listening",rn.MsgBoxHandler.Peers())
-		//rn.debug_output2("node listening",rn.MsgBoxHandler.Pid())
-		//rn.debug_output2("node listening",rn.MsgBoxHandler.IsClosed())
-		//env := <-rn.MsgBoxHandler.Inbox()
+
 
 		env := <-rn.MsgBoxHandler.Inbox()
-		//		if rn.Sm.state == FOLLOWER {
-		//
-		//			if reflect.TypeOf(env) == reflect.TypeOf(APPEND_ENTRIES_REQUEST {}){
-		//
-		//				r:=env.Msg.(APPEND_ENTRIES_REQUEST)
-		//				if r.IsHeartbeat ==false {
-		//
-		//					rn.debug_output2("XXXXXXXXXXXXXXXXXXXXXXXXXXXXX",APPEND_ENTRIES_REQUEST{})
-		//
-		//				}
-		//
-		//			}
-		//		}
+
 
 		if rn.StopSignal {
 			//rn.debug_output2("stopping..msgbox", "")
@@ -651,41 +402,24 @@ func (rn *RaftNode) startListening() {
 		var container interface{}
 		container = env.Msg
 
-		//	rn.debug_output2("->", reflect.TypeOf(container))
-		//		if reflect.TypeOf(container) == reflect.TypeOf(APPEND_ENTRIES_REQUEST{}) {
-		//			rn.debug_output2("|isHB:", container.(APPEND_ENTRIES_REQUEST).IsHeartbeat)
-		//		}
-		//		if reflect.TypeOf(container) == reflect.TypeOf(APPEND_ENTRIES_RESPONSE{}) {
-		//			rn.debug_output2("appResponse:", container.(APPEND_ENTRIES_RESPONSE))
-		//		}
-
 
 		rn.EventCh <- container
-		//rn.debug_output2("+->", container)
+		rn.debug_output2("+->", container)
 		//	rn.debug_output2("|||", rn.Sm.LOG)
 		//	rn.debug_output2("Loghandler: ", rn.LogHandler)
-		if rn.LogHandler != nil {
-			hardlog, err := rn.LogHandler.Get(rn.LogHandler.GetLastIndex())
-			check(err)
-			if hardlog != nil {
-
-				//rn.debug_output2("|HARDLOG|", string((hardlog).(SERVER_LOG_DATASTR).Data))
-
-			}
-		}
+//		if rn.LogHandler != nil {
+//			hardlog, err := rn.LogHandler.Get(rn.LogHandler.GetLastIndex())
+//			check(err)
+////			if hardlog != nil {
+////
+////				//rn.debug_output2("|HARDLOG|", string((hardlog).(SERVER_LOG_DATASTR).Data))
+////
+////			}
+//		}
 
 
 	}
 }
-
-
-func (rn *RaftNode) closeThings() {
-	rn.LogHandler.Close()
-	rn.MsgBoxHandler.Close()
-
-}
-
-
 
 
 func (rn *RaftNode) processEvents() {
@@ -696,7 +430,6 @@ func (rn *RaftNode) processEvents() {
 
 	var ev interface{}
 	for {
-		//debug_output(".")
 
 		select {
 
@@ -708,12 +441,10 @@ func (rn *RaftNode) processEvents() {
 		//rn.debug_output2("event", ev)
 		//}
 		//debug_output("timeout received")
-		//rn.debug_output2(" ele to",rn.Sm.election_time_out)
+		//rn.debug_output2(" ele to", rn.Sm.election_time_out)
 
 		if rn.StopSignal {
 			//rn.debug_output2("stopping..procesevent", "")
-
-
 			return
 		}
 
@@ -727,17 +458,14 @@ func (rn *RaftNode) processEvents() {
 		//rn.debug_output_act("actio", actions)
 		//}
 
-		//		rn.debug_output2("term",rn.Sm.term)
-		//		rn.debug_output2("i am a : ",rn.Sm.state)
-		//		rn.debug_output_act("show actions:",actions)
+
 		rn.doActions(actions)
 
-		//		if rn.Sm.state == LEADER {
-		//			rn.debug_output2("=================", "ok done all")
-		//		}
 
 	}
 }
+
+//extract candidate array from configs
 func getCandidateIdArray(config Config) ([]int64) {
 
 	MutX_getcandidatearray.Lock()
@@ -751,6 +479,8 @@ func getCandidateIdArray(config Config) ([]int64) {
 	MutX_getcandidatearray.Unlock()
 	return cids
 }
+
+//do raftnode portion of the action by processing action received from state machine one by one
 func (rn *RaftNode) doActions(actions []interface{}) {
 
 	for i := 0; i < len(actions); i++ {
@@ -758,7 +488,7 @@ func (rn *RaftNode) doActions(actions []interface{}) {
 
 		if rn.Sm.state == LEADER {
 
-			//rn.debug_output2("doingAction", reflect.TypeOf(actions[i]))
+			rn.debug_output2("doingAction", reflect.TypeOf(actions[i]))
 		}
 
 
@@ -779,8 +509,8 @@ func (rn *RaftNode) doActions(actions []interface{}) {
 
 		}else if reflect.TypeOf(actions[i]) == reflect.TypeOf(COMMIT_TO_CLIENT{}) {
 
-			//rn.debug_output2("COmmit receivedZZZZZZZZZZZZZZZZZZZZZZZZZZ", rn.Sm.candidateId)
-			//fmt.Println("ZZZZZZZZZZZZZZZZZZZZZZZZZZ")
+			//rn.debug_output2("COmmit received", rn.Sm.candidateId)
+
 			rn.forwardToClient(actions[i].(COMMIT_TO_CLIENT))
 
 		}else if reflect.TypeOf(actions[i]) == reflect.TypeOf(SERVER_LOG_DATASTR{}) {
@@ -807,7 +537,7 @@ func (rn *RaftNode) doActions(actions []interface{}) {
 
 func (rn *RaftNode) forwardVoteRequest(vrq_SM VOTE_REQUEST) {
 
-	//rn.debug_output2("vote request to ",vrq_SM.To_CandidateId)
+	//rn.debug_output2("vote request to ", vrq_SM.To_CandidateId)
 	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: int(vrq_SM.To_CandidateId), Msg: vrq_SM}
 
 
@@ -821,36 +551,30 @@ func (rn *RaftNode) forwardVoteResponse(vr_SM VOTE_RESPONSE) {
 }
 func (rn *RaftNode) forwardAppendEntriesRequest(arq_SM APPEND_ENTRIES_REQUEST) {
 
-	//rn.debug_output2("theapReq", arq_SM)
+	rn.debug_output2("theapReq", arq_SM)
 	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: int(arq_SM.To_CandidateId), Msg: arq_SM}
-	//if arq_SM.IsHeartbeat == false{
-	//rn.debug_output2("Done", arq_SM)
-	//}
+
 
 }
 func (rn *RaftNode) forwardAppendEntriesResponse(ars_SM APPEND_ENTRIES_RESPONSE) {
 
-	//rn.debug_output2("append response to ", ars_SM)
+	rn.debug_output2("append response to ", ars_SM)
 	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: int(ars_SM.To_CandidateId), Msg:ars_SM}
 
 
 }
 func (rn *RaftNode) forwardToClient(cmt_to_c COMMIT_TO_CLIENT) {
 
-	//debug_output("commit sent from:")
-
-	//debug_output(rn.Sm.candidateId)
+	//debug_output("commit sent from:") ;debug_output(rn.Sm.candidateId)
 
 	rn.CommitChan <- cmt_to_c
 
 }
 func (rn *RaftNode) saveToLog(lg_SM SERVER_LOG_DATASTR) {
 
-	//rn.LogHandler.Lock()
 	rn.LogHandler.TruncateToEnd(lg_SM.Index) //not mandatory
 	//rn.debug_output2("saved_state_disk:", lg_SM)
 	rn.LogHandler.Append(lg_SM)
-	//rn.LogHandler.Unlock()
 
 }
 func (rn *RaftNode) setElectionTimeout(vr_SM RESET_ALARM_ELECTION_TIMEOUT) {
@@ -866,10 +590,10 @@ func (rn *RaftNode) setElectionTimeout(vr_SM RESET_ALARM_ELECTION_TIMEOUT) {
 
 		//msg:= fmt.Sprint("L: %d, T: %d",int(rn.Sm.leaderId),int(rn.Sm.term))
 
-		//rn.debug_output2("reset election timeout ", "")
-		//rn.debug_output2("L:", (rn.Sm.leaderId))
-		//rn.debug_output2("T:", (rn.Sm.term))
-		//rn.debug_output2("C:", (rn.Sm.commitIndex))
+//		rn.debug_output2("reset election timeout ", "")
+//		rn.debug_output2("L:", (rn.Sm.leaderId))
+//		rn.debug_output2("T:", (rn.Sm.term))
+//		rn.debug_output2("C:", (rn.Sm.commitIndex))
 
 	}
 
@@ -900,7 +624,11 @@ func (rn *RaftNode) CommitChannel() (chan COMMIT_TO_CLIENT) {
 //to implement locking here
 func (rn *RaftNode) CommittedIndex() (ci int64) {
 
-	return rn.Sm.commitIndex
+	rn.Sm.MutX_SM.Lock()
+	ci = rn.Sm.commitIndex
+	rn.Sm.MutX_SM.Unlock()
+
+	return ci
 }
 func (rn *RaftNode) GetIndex(ci int64) (bt []byte, e error) {
 
@@ -911,13 +639,21 @@ func (rn *RaftNode) GetIndex(ci int64) (bt []byte, e error) {
 
 	return bt, e
 }
-func (rn *RaftNode) Id() (int64) {
+func (rn *RaftNode) Id() (cid int64) {
 
-	return rn.Sm.candidateId
+		rn.Sm.MutX_SM.Lock()
+	cid =  rn.Sm.candidateId
+		rn.Sm.MutX_SM.Unlock()
+	return  cid
+
 }
-func (rn *RaftNode) LeaderId() (int64) {
+func (rn *RaftNode) LeaderId() (lid int64) {
 
-	return rn.Sm.leaderId
+	rn.Sm.MutX_SM.Lock()
+	lid = rn.Sm.leaderId
+	rn.Sm.MutX_SM.Unlock()
+	return lid
+
 }
 func (rn *RaftNode) ShutDown() {
 
