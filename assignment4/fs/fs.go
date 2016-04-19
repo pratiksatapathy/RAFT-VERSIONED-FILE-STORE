@@ -5,7 +5,8 @@ import (
 	"sync"
 	"time"
 
-
+	"github.com/pratiksatapathy/cs733/assignment3/raftnode"
+	"encoding/json"
 )
 
 type FileInfo struct {
@@ -18,25 +19,26 @@ type FileInfo struct {
 
 type FS struct {
 	sync.RWMutex
-	ir map[string]*FileInfo
+	dir      map[string]*FileInfo
+	gversion int // global version
 }
 type Mapper struct {
-	sync.RWMutex
+	MutX_ClientMap *sync.RWMutex
 	ChanDir map[int]chan interface{}
 }
 
 //remove the sm instance for tis
-type COMMIT_TO_CLIENT struct {
-	Index    int64
-	Data     []byte
-	Err_code int64
-	//handler  int
-}
+//type COMMIT_TO_CLIENT struct {
+//	Index    int64
+//	Data     []byte
+//	Err_code int64
+//	//handler  int
+//}
 type MsgWithId struct {
 	Handler int
-	Mesg     Msg
+	Mesg    Msg
 }
-var gversion = 0 // global version
+
 
 func (fi *FileInfo) cancelTimer() {
 	if fi.timer != nil {
@@ -44,32 +46,44 @@ func (fi *FileInfo) cancelTimer() {
 		fi.timer = nil
 	}
 }
-
-func StartFileStore(RNcommitChannel chan COMMIT_TO_CLIENT, clientmp Mapper) {
+//var fs FS;
+func StartFileStore(rn *raftnode.RaftNode, clientmp *Mapper) {
+	fs := &FS{dir: make(map[string]*FileInfo, 1000)}
+	var msgwithId *MsgWithId
+	var cmt_t_client raftnode.COMMIT_TO_CLIENT
 
 	for {
-		cmt_t_client := <-RNcommitChannel
-		if cmt_t_client.Err_code == 100 { //not leader //we will see what to do here
 
-		}else {
-			msgwithId := (MsgWithId{})(cmt_t_client.Data)
-			response := fs.ProcessMsg(msgwithId.Mesg)
-			clientmp.ChanDir[msgwithId.Handler] <- response
+		cmt_t_client = <-rn.CommitChan
+
+		//fmt.Println("index:",cmt_t_client.Index,"data stored:",cmt_t_client.Data)
+		err := json.Unmarshal(cmt_t_client.Data, &msgwithId)
+
+		if err != nil {
+			panic(err)
 		}
+
+		response := fs.ProcessMsg(&(msgwithId.Mesg))
+
+		//temp :=  response
+		clientmp.MutX_ClientMap.Lock()
+		clientmp.ChanDir[msgwithId.Handler] <- response
+		clientmp.MutX_ClientMap.Unlock()
+
 
 	}
 
 }
-func ProcessMsg(msg *Msg) *Msg {
+func (fs *FS) ProcessMsg(msg *Msg) *Msg {
 	switch msg.Kind {
 	case 'r':
-		return processRead(msg)
+		return fs.processRead(msg)
 	case 'w':
-		return processWrite(msg)
+		return fs.processWrite(msg)
 	case 'c':
-		return processCas(msg)
+		return fs.processCas(msg)
 	case 'd':
-		return processDelete(msg)
+		return fs.processDelete(msg)
 	}
 
 	// Default: Internal error. Shouldn't come here since
@@ -77,7 +91,7 @@ func ProcessMsg(msg *Msg) *Msg {
 	return &Msg{Kind: 'I'}
 }
 
-func processRead(msg *Msg) *Msg {
+func (fs *FS) processRead(msg *Msg) *Msg {
 	fs.RLock()
 	defer fs.RUnlock()
 	if fi := fs.dir[msg.Filename]; fi != nil {
@@ -101,7 +115,7 @@ func processRead(msg *Msg) *Msg {
 	}
 }
 
-func internalWrite(msg *Msg) *Msg {
+func (fs *FS) internalWrite(msg *Msg) *Msg {
 	fi := fs.dir[msg.Filename]
 	if fi != nil {
 		fi.cancelTimer()
@@ -109,10 +123,10 @@ func internalWrite(msg *Msg) *Msg {
 		fi = &FileInfo{}
 	}
 
-	gversion += 1
+	fs.gversion += 1
 	fi.filename = msg.Filename
 	fi.contents = msg.Contents
-	fi.version = gversion
+	fi.version = fs.gversion
 
 	var absexptime time.Time
 	if msg.Exptime > 0 {
@@ -120,27 +134,27 @@ func internalWrite(msg *Msg) *Msg {
 		absexptime = time.Now().Add(dur)
 		timerFunc := func(name string, ver int) func() {
 			return func() {
-				processDelete(&Msg{Kind: 'D',
+				fs.processDelete(&Msg{Kind: 'D',
 					Filename: name,
 					Version:  ver})
 			}
-		}(msg.Filename, gversion)
+		}(msg.Filename, fs.gversion)
 
 		fi.timer = time.AfterFunc(dur, timerFunc)
 	}
 	fi.absexptime = absexptime
 	fs.dir[msg.Filename] = fi
 
-	return ok(gversion)
+	return ok(fs.gversion)
 }
 
-func processWrite(msg *Msg) *Msg {
+func (fs *FS) processWrite(msg *Msg) *Msg {
 	fs.Lock()
 	defer fs.Unlock()
-	return internalWrite(msg)
+	return fs.internalWrite(msg)
 }
 
-func processCas(msg *Msg) *Msg {
+func (fs *FS) processCas(msg *Msg) *Msg {
 	fs.Lock()
 	defer fs.Unlock()
 
@@ -149,10 +163,10 @@ func processCas(msg *Msg) *Msg {
 			return &Msg{Kind: 'V', Version: fi.version}
 		}
 	}
-	return internalWrite(msg)
+	return fs.internalWrite(msg)
 }
 
-func processDelete(msg *Msg) *Msg {
+func (fs *FS) processDelete(msg *Msg) *Msg {
 	fs.Lock()
 	defer fs.Unlock()
 	fi := fs.dir[msg.Filename]

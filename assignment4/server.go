@@ -4,14 +4,18 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/pratiksatapathy/cs733/assignment3/fs"
+	"github.com/pratiksatapathy/cs733/assignment3/raftnode"
 	"net"
 	"os"
 	"strconv"
+	"github.com/cs733-iitb/cluster/mock"
+	"encoding/json"
+	"sync"
+	"io/ioutil"
+	"github.com/cs733-iitb/cluster"
 )
-var clientHandles int
 var crlf = []byte{'\r', '\n'}
-
-var client_mapper fs.Mapper
+var mck *mock.MockCluster//var client_mapper *fs.Mapper
 func checkk(obj interface{}) {
 	if obj != nil {
 		fmt.Println(obj)
@@ -44,6 +48,10 @@ func reply(conn *net.TCPConn, msg *fs.Msg) bool {
 		resp = "ERR_CMD_ERR"
 	case 'I':
 		resp = "ERR_INTERNAL"
+	case 'L':
+		resp = "ERR_REDIRECT " + (msg.Err_redirect_text)
+	case 'X':
+		resp = "ERR_NLEADER " + (msg.Err_redirect_text)
 	default:
 		fmt.Printf("Unknown response kind '%c'", msg.Kind)
 		return false
@@ -57,50 +65,96 @@ func reply(conn *net.TCPConn, msg *fs.Msg) bool {
 	return err == nil
 }
 
-func serve(conn *net.TCPConn, rn *RaftNode, clientHandle int) {
+func serve(conn *net.TCPConn, rn *raftnode.RaftNode, clientHandle int, client_mapper *fs.Mapper) {
 
 	//assign a channel to this client
 
-	reader := bufio.NewReader(conn)
-	for {
-		msg, msgerr, fatalerr := fs.GetMsg(reader)
-		if fatalerr != nil || msgerr != nil {
-			reply(conn, &fs.Msg{Kind: 'M'})
-			conn.Close()
-			break
+	if rn.IAmNotLeader() {
+
+		node_addr,stat :=rn.GetLeaderURL()
+
+		if  stat {
+
+			fmt.Println("S:notleader")
+			reply(conn, &fs.Msg{Kind: 'L',Err_redirect_text:node_addr})
+
+		}else{
+
+			reply(conn, &fs.Msg{Kind: 'X',Err_redirect_text:node_addr})
 		}
 
-		if msgerr != nil {
-			if (!reply(conn, &fs.Msg{Kind: 'M'})) {
+		conn.Close()
+		return
+
+
+	}else {
+
+		reader := bufio.NewReader(conn)
+		for {
+			//fmt.Println("got data")
+			msg, msgerr, fatalerr := fs.GetMsg(reader)
+			if fatalerr != nil || msgerr != nil {
+				reply(conn, &fs.Msg{Kind: 'M'})
 				conn.Close()
 				break
 			}
+
+			if msgerr != nil {
+				if (!reply(conn, &fs.Msg{Kind: 'M'})) {
+					conn.Close()
+					break
+				}
+			}
+
+			channelForClient := make(chan interface{}, 10000)
+			client_mapper.MutX_ClientMap.Lock()
+			client_mapper.ChanDir[clientHandle] = channelForClient
+			client_mapper.MutX_ClientMap.Unlock()
+
+			//rn.Append([]byte(fmt.Sprintf("%v", fs.MsgWithId{Handler:clientHandle,Mesg:msg})))
+
+			msgWithId := fs.MsgWithId{Handler:clientHandle, Mesg:*msg}
+
+			bytData, err := json.Marshal(msgWithId)
+
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("pdata")
+
+
+			rn.Append(bytData)
+			client_mapper.MutX_ClientMap.RLock()
+			channelForThisHandle :=  client_mapper.ChanDir[clientHandle]
+			client_mapper.MutX_ClientMap.RUnlock()
+			channelOutputForThisHandle := <-channelForThisHandle
+
+			response := channelOutputForThisHandle.(*fs.Msg)
+			//panic("")
+			//fmt.Println("will respond")
+			if !reply(conn, response) {
+				conn.Close()
+
+				break
+			}
+
 		}
-
-		channelForClient := make(chan interface{},100)
-		client_mapper.ChanDir[clientHandle] = channelForClient
-
-		rn.Append([]byte(fmt.Sprintf("%v", fs.MsgWithId{Handler:clientHandle,Mesg:msg})))
-
-		response := <-client_mapper.ChanDir[clientHandle]
-
-		if !reply(conn, response) {
-			conn.Close()
-
-			break
-		}
-
 	}
 }
 
-func serverMain(port int, rn *RaftNode) {
+func serverMain(id int, config raftnode.Config, mck cluster.Server) {
+	//
 
-	clientHandles = 0
+	clientHandles := 0
+	rn := raftnode.StartNewRaftNode(config, mck)
+	rn.StartOperation()
 
-	go fs.StartFileStore(rn.CommitChan,client_mapper) //give raft commit channel to fs
+	client_mapper := &fs.Mapper{ChanDir: make(map[int]chan interface{}, 1000)}
+	client_mapper.MutX_ClientMap = &sync.RWMutex{}
+	go fs.StartFileStore(&rn, client_mapper) //give raft commit channel to fs
 
-	client_mapper = &fs.Mapper{ChanDir: make(map[string]*net.TCPConn, 1000)}
-	tcpaddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("localhost:%d", port))
+	tcpaddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("localhost:%d", config.Cluster[id-1].Port))
+	//fmt.Println("port: ",config.Cluster[id-1].Port)
 	check(err)
 	tcp_acceptor, err := net.ListenTCP("tcp", tcpaddr)
 
@@ -109,11 +163,41 @@ func serverMain(port int, rn *RaftNode) {
 	for {
 		tcp_conn, err := tcp_acceptor.AcceptTCP()
 		check(err)
-		clientHandles ++ ;
-		go serve(tcp_conn, rn, clientHandles)
+		clientHandles ++;
+		go serve(tcp_conn, &rn, clientHandles, client_mapper)
 	}
 }
 
 func main() {
-	//serverMain()
+
+
+	var configs []raftnode.Config
+	tmp_cnfg,_ := ioutil.ReadFile("configs.json")
+	err :=json.Unmarshal(tmp_cnfg,&configs)
+	check(err)
+
+//	var cluster_config cluster.Config
+//	tmp_clusterConfig,_ := ioutil.ReadFile("clusterconfig.json")
+//	err = json.Unmarshal(tmp_clusterConfig,&cluster_config)
+//	check(err)
+
+	id,err1 := strconv.Atoi(os.Args[1])
+	check(err1)
+
+	//
+
+	server, err := cluster.New(id, "cluster_test_config.json")
+	fmt.Println("port: ",configs[id-1].Cluster[id-1].Port,id)
+	//ioutil.WriteFile("welcome.txt",[]byte(s),0644)
+	serverMain(id,(configs[id-1]),server)
+	//serverMain(1,configs[0],mck)
+
+
+}
+func check(err error) {
+
+	if err != nil {
+		fmt.Println("ERROR:",err)
+	}
+
 }

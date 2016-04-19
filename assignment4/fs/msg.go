@@ -50,6 +50,7 @@ type Msg struct {
 	Numbytes int
 	Exptime  int // expiry time in seconds
 	Version  int
+	Err_redirect_text string
 
 }
 
