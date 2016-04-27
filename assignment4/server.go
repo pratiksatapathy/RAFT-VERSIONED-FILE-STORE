@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/pratiksatapathy/cs733/assignment3/fs"
-	"github.com/pratiksatapathy/cs733/assignment3/raftnode"
+	"github.com/pratiksatapathy/cs733/assignment4/fs"
+	"github.com/pratiksatapathy/cs733/assignment4/raftnode"
 	"net"
 	"os"
 	"strconv"

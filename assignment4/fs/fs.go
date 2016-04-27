@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pratiksatapathy/cs733/assignment3/raftnode"
+	"github.com/pratiksatapathy/cs733/assignment4/raftnode"
 	"encoding/json"
 )
 
