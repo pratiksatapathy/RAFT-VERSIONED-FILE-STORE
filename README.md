@@ -1,7 +1,8 @@
 
 # THE RAFT CONSENSUS ALGORITHM IMPLEMENTATION ON A VOLATILE FILE STORE
 
-cs 733 project course project \
+cs 733 project course project 
+
 by pratik satapathy
 
 Description
@@ -13,8 +14,8 @@ The raft state machine is built on the principles provided in the paper \
 ##### The project consists of two parts 
 
 
-- ##### A non-persistent file store (Version file store)
-- ##### Raft consensus protocol implementation
+-  A non-persistent file store (Version file store)
+-  Raft consensus protocol implementation
 
 
 Project Description
