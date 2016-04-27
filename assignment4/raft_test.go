@@ -130,8 +130,10 @@ func TestRPC_leaderShutDown(t *testing.T) {
 
 	rafts[3].Process.Kill()
 
-	//time.Sleep(5 * time.Second)
+	time.Sleep( 10 * time.Second)
 	fmt.Println("----------killd----------")
+	cle = mkClient(t, "localhost:8080")
+	c = &ClientContainer{cl:cle}
 
 
 	data = "Cloud fun 3"

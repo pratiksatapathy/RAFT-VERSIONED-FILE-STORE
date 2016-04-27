@@ -65,7 +65,7 @@ type NetConfig struct {
 
 //custom debug log
 func (rn *RaftNode) debug_output2(s string, i interface{}) {
-//return
+return
 	logit(rn.LogDir, fmt.Sprint(s))
 	logit(rn.LogDir, fmt.Sprintln(i))
 
