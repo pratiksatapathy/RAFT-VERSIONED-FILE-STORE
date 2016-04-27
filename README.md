@@ -48,7 +48,7 @@ COMPARE AND SWAP SYNTAX:
   REQUEST:cas filename version numbytes exptime\r\ncontent_bytes\r\n
   RESPONSE:OK version\r\n
 
-####DELETE SYNTAX:
+DELETE SYNTAX:
 
 REQUEST:delete filename\r\n
 RESPONSE:OK\r\n
