@@ -246,7 +246,6 @@ func (rn *RaftNode) initializeLog(config Config) {
 
 	if rn.Sm.LogHandler.GetLastIndex() == -1 { //log is absolutely empty
 
-		fmt.Println("EMPTY LOGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG")
 		rn.Sm.LogHandler.Append(SERVER_LOG_DATASTR{Index:0, Term:0, Data:[]byte("")})
 	}
 	//replay old log to fs
@@ -726,9 +725,9 @@ func (rn *RaftNode) GetLeaderURL()(string,bool) {
 
 	}else {
 
-	fmt.Println("ldr:", rn.LeaderId())
+	//fmt.Println("ldr:", rn.LeaderId())
 	res = fmt.Sprintf("%s:%d", rn.myconfig.Cluster[rn.LeaderId() - 1].Host, rn.myconfig.Cluster[rn.LeaderId() - 1].Port)
-	fmt.Println("aa", res);
+	//fmt.Println("aa", res);
 		status = true
 	}
 

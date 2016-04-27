@@ -66,7 +66,7 @@ func init() {
 		rafts[i] = exec.Command("./rafte", param)
 		rafts[i].Stdout = os.Stdout
 		rafts[i].Stdin = os.Stdin
-		fmt.Println("***fileservers up***")
+		//fmt.Println("***fileservers up***")
 
 		rafts[i].Start()
 	}
@@ -78,7 +78,7 @@ func startIndex(i int){
 	rafts[i] = exec.Command("./rafte", param)
 	rafts[i].Stdout = os.Stdout
 	rafts[i].Stdin = os.Stdin
-	fmt.Println("***fileservers up***")
+	//fmt.Println("***fileservers up***")
 
 	rafts[i].Start()
 	time.Sleep(5 * time.Second)
@@ -89,7 +89,7 @@ func cleanup() {
 
 		rafts[i].Process.Kill()
 	}
-	fmt.Println("***fileservers down***")
+	//fmt.Println("***fileservers down***")
 }
 //func TestOne(t *testing.T) {
 //
@@ -131,7 +131,7 @@ func TestRPC_leaderShutDown(t *testing.T) {
 	rafts[3].Process.Kill()
 
 	time.Sleep( 10 * time.Second)
-	fmt.Println("----------killd----------")
+	//fmt.Println("----------killd----------")
 	cle = mkClient(t, "localhost:8080")
 	c = &ClientContainer{cl:cle}
 
@@ -184,7 +184,7 @@ func TestRPC_BasicSequential(t *testing.T) {
 
 
 	m, err := c.rRead( "cs733net")
-	fmt.Println("=",m.Filename,string(m.Contents))
+	//fmt.Println("=",m.Filename,string(m.Contents))
 	expect(t, m, &Msg{Kind: 'F'}, "file not found", err)
 	//fmt.Println(cl.conn.LocalAddr().String())
 
@@ -596,7 +596,7 @@ func (c *ClientContainer) rRead(filename string) (*Msg, error) {
 				rebuildConn = true
 				rebuildAddress = m.Err_redirect_text
 				//c.cl.conn.Close()
-				fmt.Print("error at new client creations")
+				//fmt.Print("error at new client creations")
 				//				}
 			}
 
@@ -616,9 +616,9 @@ func (c *ClientContainer) rWrite( filename string, contents string, exptime int)
 
 	for {
 		if rebuildConn{
-			fmt.Println("error 615",c.cl.conn)
+			//fmt.Println("error 615",c.cl.conn)
 			c.cl = mkNewClient(rebuildAddress)
-			fmt.Println("error 617",c.cl.conn)
+			//fmt.Println("error 617",c.cl.conn)
 
 
 		}
@@ -638,7 +638,7 @@ func (c *ClientContainer) rWrite( filename string, contents string, exptime int)
 			//fmt.Println("conn at error",c.cl.conn)
 			//}
 
-				fmt.Println("error expected")
+				//fmt.Println("error expected")
 			time.Sleep(5 * time.Second)
 			id := int64(rand.Float32() * float32(len(netconfigs) - 1))
 			m := fmt.Sprintf("%s:%d", netconfigs[id].Host,8083 )//netconfigs[id].Port
@@ -658,7 +658,7 @@ func (c *ClientContainer) rWrite( filename string, contents string, exptime int)
 				rebuildConn = true
 				rebuildAddress = m.Err_redirect_text
 				//c.cl.conn.Close()
-				fmt.Print("error at new client creations")
+				//fmt.Print("error at new client creations")
 				//				}
 			}
 
@@ -711,7 +711,7 @@ func (c *ClientContainer) rDelete(filename string) (*Msg, error) {
 				rebuildConn = true
 				rebuildAddress = m.Err_redirect_text
 				//c.cl.conn.Close()
-				fmt.Print("error at new client creations")
+				//fmt.Print("error at new client creations")
 				//				}
 			}
 
@@ -736,7 +736,7 @@ func (c *ClientContainer) rCAS(filename string, version int, contents string, ex
 	for {
 
 		if rebuildConn{
-			fmt.Print("something wrong")
+			//fmt.Print("something wrong")
 			c.cl = mkNewClient(rebuildAddress)
 
 		}
@@ -771,12 +771,12 @@ func (c *ClientContainer) rCAS(filename string, version int, contents string, ex
 
 				break
 			}else {
-				fmt.Print("something wrong735")
+				//fmt.Print("something wrong735")
 
 				rebuildConn = true
 				rebuildAddress = m.Err_redirect_text
 				//c.cl.conn.Close()
-				fmt.Print("error at new client creations")
+				//fmt.Print("error at new client creations")
 //				}
 			}
 

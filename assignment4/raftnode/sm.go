@@ -293,7 +293,7 @@ func (thisServer *SERVER_DATA) followerTimeoutRequest() (actions []interface{}) 
 	//thisServer.MutX_SM.Unlock()
 
 	//debug_output(thisServer)
-	fmt.Println("times out")
+	//fmt.Println("times out")
 	thisServer.term = thisServer.term + 1 //increase term
 	thisServer.votedFor = thisServer.candidateId //vote to self
 	thisServer.candidateStateAttrData.negativeVoteCount = 0; //set-up/reset a counter for vote for this term
@@ -348,7 +348,6 @@ func (thisServer *SERVER_DATA) leaderTimeoutRequest() (actions []interface{}) {
 
 	if thisServer.appendSynch > 10 {
 
-		//fmt.Println("RESETTTTTTTTTTTTTTTTTTTTTTTTTTTT")
 		thisServer.leaderStateAttrData.lastNext = []int64{0}
 		for i := 0; i < len(thisServer.candidates); i++ {
 
@@ -485,7 +484,6 @@ func (thisServer *SERVER_DATA) candidateVoteResponse(incomingRes VOTE_RESPONSE) 
 					var alog SERVER_LOG_DATASTR
 					alog.makeLog(0, 0, []byte("")) //zerolog as intialization to matchindex
 
-					//fmt.Println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 					thisServer.leaderStateAttrData.matchIndex[thisServer.candidates[i]] = alog //for all servers
 				}
 
@@ -788,29 +786,7 @@ func (thisServer *SERVER_DATA) append(data []byte) (actions []interface{}) {
 		actions = append(actions, SERVER_LOG_DATASTR{Index:thisServer.LogHandler.GetLastIndex(), Term:thisServer.term, Data:data})
 		thisServer.debug_output2("nextindexstr:::", thisServer.leaderStateAttrData.nextIndex)
 
-		//prepare to send to others
-
-		//thisServer.debug_output2("serverLog:", thisServer.LOG)
-		//		for i := 0; i < len(thisServer.candidates); i++ {
-		//
-		//			if thisServer.candidates[i] == thisServer.candidateId {
-		//				continue
-		//			}
-		//			var appendentrReqObject APPEND_ENTRIES_REQUEST
-		//			appendentrReqObject.LeaderTerm = thisServer.term
-		//			appendentrReqObject.From_CandidateId = thisServer.candidateId
-		//			appendentrReqObject.LeaderCommitIndex = thisServer.commitIndex
-		//			appendentrReqObject.To_CandidateId = (thisServer.candidates[i])
-		//			nextIndex := thisServer.leaderStateAttrData.nextIndex[(thisServer.candidates[i])]
-		//
-		//			//fmt.Println("%dnextindex:%v",thisServer.candidates[i], nextIndex)
-		//
-		//			appendentrReqObject.LeaderLastLog = thisServer.LOG[nextIndex - 1]
-		//			appendentrReqObject.LogToAdd = thisServer.LOG[nextIndex]
-		//
-		//			actions = append(actions, appendentrReqObject)
-		//
-		//		}
+	
 
 
 	}else if thisServer.state == CANDIDATE || thisServer.state == FOLLOWER {

@@ -75,7 +75,7 @@ func serve(conn *net.TCPConn, rn *raftnode.RaftNode, clientHandle int, client_ma
 
 		if  stat {
 
-			fmt.Println("S:notleader")
+			//fmt.Println("S:notleader")
 			reply(conn, &fs.Msg{Kind: 'L',Err_redirect_text:node_addr})
 
 		}else{
@@ -189,7 +189,7 @@ func main() {
 	//
 
 	server, err := cluster.New(id, "cluster_test_config.json")
-	fmt.Println("port: ",configs[id-1].Cluster[id-1].Port,id)
+	//fmt.Println("port: ",configs[id-1].Cluster[id-1].Port,id)
 	//ioutil.WriteFile("welcome.txt",[]byte(s),0644)
 	serverMain(id,(configs[id-1]),server)
 	//serverMain(1,configs[0],mck)
