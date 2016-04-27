@@ -107,7 +107,9 @@ func serve(conn *net.TCPConn, rn *raftnode.RaftNode, clientHandle int, client_ma
 			}
 
 			channelForClient := make(chan interface{}, 10000)
+			//client_mapper.MutX_ClientMap.
 			client_mapper.MutX_ClientMap.Lock()
+
 			client_mapper.ChanDir[clientHandle] = channelForClient
 			client_mapper.MutX_ClientMap.Unlock()
 
@@ -120,7 +122,7 @@ func serve(conn *net.TCPConn, rn *raftnode.RaftNode, clientHandle int, client_ma
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("pdata")
+			//fmt.Println("pdata")
 
 
 			rn.Append(bytData)
@@ -163,7 +165,7 @@ func serverMain(id int, config raftnode.Config, mck cluster.Server) {
 	for {
 		tcp_conn, err := tcp_acceptor.AcceptTCP()
 		check(err)
-		clientHandles ++;
+		clientHandles ++;//fmt.Println("new client..at server")
 		go serve(tcp_conn, &rn, clientHandles, client_mapper)
 	}
 }

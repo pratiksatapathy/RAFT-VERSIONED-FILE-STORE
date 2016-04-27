@@ -21,10 +21,11 @@ type FS struct {
 	sync.RWMutex
 	dir      map[string]*FileInfo
 	gversion int // global version
+	lastindex int64
 }
 type Mapper struct {
 	MutX_ClientMap *sync.RWMutex
-	ChanDir map[int]chan interface{}
+	ChanDir        map[int]chan interface{}
 }
 
 //remove the sm instance for tis
@@ -56,20 +57,30 @@ func StartFileStore(rn *raftnode.RaftNode, clientmp *Mapper) {
 
 		cmt_t_client = <-rn.CommitChan
 
-		//fmt.Println("index:",cmt_t_client.Index,"data stored:",cmt_t_client.Data)
 		err := json.Unmarshal(cmt_t_client.Data, &msgwithId)
 
 		if err != nil {
 			panic(err)
 		}
 
-		response := fs.ProcessMsg(&(msgwithId.Mesg))
 
-		//temp :=  response
-		clientmp.MutX_ClientMap.Lock()
-		clientmp.ChanDir[msgwithId.Handler] <- response
-		clientmp.MutX_ClientMap.Unlock()
+		if fs.lastindex < cmt_t_client.Index {
+			//fmt.Println("L:",rn.LeaderId(),":cmt NOdeid:",rn.Id(),"index: ",cmt_t_client.Index,"Data:",msgwithId.Mesg.Filename,"version:",fs.dir)
 
+
+			response := fs.ProcessMsg(&(msgwithId.Mesg))
+			fs.lastindex = cmt_t_client.Index
+
+			//fmt.Println("lockunlock")
+			clientmp.MutX_ClientMap.Lock()
+
+			if chn, ok := clientmp.ChanDir[msgwithId.Handler]; ok {
+				//do something here
+				chn <- response
+			}
+
+			clientmp.MutX_ClientMap.Unlock()
+		}
 
 	}
 

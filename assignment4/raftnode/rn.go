@@ -241,12 +241,15 @@ func (rn *RaftNode) initializeLog(config Config) {
 
 	handler, err := log.Open(config.LogDir + "/raftlog")
 	rn.Sm.LogHandler = handler
+
 	check(err)
 
 	if rn.Sm.LogHandler.GetLastIndex() == -1 { //log is absolutely empty
 
+		fmt.Println("EMPTY LOGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG")
 		rn.Sm.LogHandler.Append(SERVER_LOG_DATASTR{Index:0, Term:0, Data:[]byte("")})
 	}
+	//replay old log to fs
 
 }
 //read from storage to the state machine memory log
@@ -469,7 +472,9 @@ func (rn *RaftNode) processEvents() {
 		actions := rn.Sm.processEvent(ev)
 		rn.Sm.MutX_SM.Unlock()
 		//if rn.Sm.state == LEADER {
-		//rn.debug_output_act("actio", actions)
+		if rn.Id() == 1 {
+			//rn.debug_output2("actio", actions)
+		}
 		//}
 
 
@@ -511,6 +516,7 @@ func (rn *RaftNode) doActions(actions []interface{}) {
 			rn.forwardVoteResponse(actions[i].(VOTE_RESPONSE))
 
 		}else if reflect.TypeOf(actions[i]) == reflect.TypeOf(APPEND_ENTRIES_REQUEST{}) {
+
 
 			rn.forwardAppendEntriesRequest(actions[i].(APPEND_ENTRIES_REQUEST))
 
@@ -563,7 +569,7 @@ func (rn *RaftNode) forwardVoteResponse(vr_SM VOTE_RESPONSE) {
 }
 func (rn *RaftNode) forwardAppendEntriesRequest(arq_SM APPEND_ENTRIES_REQUEST) {
 
-		str:=""
+		//str:=""
 	if arq_SM.IsHeartbeat {
 		//str = "HB"
 
@@ -571,7 +577,7 @@ func (rn *RaftNode) forwardAppendEntriesRequest(arq_SM APPEND_ENTRIES_REQUEST) {
 
 		//str=fmt.Sprintf("append to: %v, Heartbeat?:%v, LastLog:%v,addLog:%v",arq_SM.To_CandidateId,arq_SM.IsHeartbeat,string(arq_SM.LeaderLastLog.Data),
 		//string(arq_SM.LogToAdd.Data))
-			rn.debug_output2("", str)
+			//rn.debug_output2("did receive data at this node", str)
 	}
 
 	rn.MsgBoxHandler.Outbox() <- &cluster.Envelope{Pid: int(arq_SM.To_CandidateId), Msg: arq_SM}
@@ -590,7 +596,7 @@ func (rn *RaftNode) forwardToClient(cmt_to_c COMMIT_TO_CLIENT) {
 	rn.debug_output2("cmt sent from:","")
 
 	if rn.Id() == 1{
-		fmt.Println("cmtSnt:",rn.Id(),cmt_to_c.Index)
+		//fmt.Println("cmtSnt:",rn.Id(),cmt_to_c.Index)
 
 	}
 //rn.MutX_cmtchan.Lock()
@@ -717,7 +723,6 @@ func (rn *RaftNode) GetLeaderURL()(string,bool) {
 		res = fmt.Sprintf("%s:%d", rn.myconfig.Cluster[id].Host, rn.myconfig.Cluster[id].Port)
 
 		status = false
-
 
 	}else {
 

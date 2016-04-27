@@ -226,7 +226,7 @@ func (thisServer *SERVER_DATA) isLeader()(bool){
 }
 func (thisServer *SERVER_DATA) setState(state int8){
 
-	//thisServer.MutX_SMState.Lock()
+	//thisServer.MutX_SMState.Lock() // using a state machine wide lock now
 	thisServer.state = state
 	//thisServer.MutX_SMState.Unlock()
 }
@@ -398,6 +398,7 @@ func makeAppendEntryReq(thisServer *SERVER_DATA, sendId int64, isHeartBeat bool)
 		appendentrReqObject.IsHeartbeat = isHeartBeat
 	}
 
+	//fmt.Println("app",appendentrReqObject.LeaderCommitIndex)
 	return appendentrReqObject
 }
 

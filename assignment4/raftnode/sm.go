@@ -195,11 +195,6 @@ func (thisServer *SERVER_DATA) followerLeaderCandidateAppendEntriesRequest(incom
 
 			//if in candidate state then keep behaving as candidate
 			appentResObj.makeResp(thisServer, incomingReq, false)
-//			appentResObj.From_CandidateId = thisServer.candidateId
-//			appentResObj.ResponderTerm = thisServer.term
-//			appentResObj.AppendSuccess = false
-//			appentResObj.To_CandidateId = incomingReq.From_CandidateId
-//			appentResObj.AppendedIndex = incomingReq.LogToAdd.Index
 			actions = append(actions, appentResObj)
 		}
 
@@ -210,7 +205,6 @@ func (thisServer *SERVER_DATA) followerLeaderCandidateAppendEntriesRequest(incom
 			//reset vote as soon as a term update
 			thisServer.votedFor = NONE
 			thisServer.term = incomingReq.LeaderTerm
-
 			actions = append(actions, STATE_STORE{term:thisServer.term, voteFor:thisServer.votedFor})
 
 		}
@@ -218,61 +212,57 @@ func (thisServer *SERVER_DATA) followerLeaderCandidateAppendEntriesRequest(incom
 			thisServer.setState(FOLLOWER)
 		}
 
+		//if (incomingReq.IsHeartbeat == true) {  //this is a heartbeat message
 
-		if (incomingReq.IsHeartbeat == true) {  //this is a heartbeat message
-
-			//fmt.Print("ID:",thisServer.candidateId,"LC",incomingReq.LeaderCommitIndex)
+			//fmt.Print("LDcmt:",incomingReq.LeaderCommitIndex,"from",incomingReq.From_CandidateId)
 			thisServer.leaderId = incomingReq.From_CandidateId
 			temp := thisServer.commitIndex
 
 
 			thisServer.commitIndex = int64(math.Min(float64(incomingReq.LeaderCommitIndex),
 				float64(thisServer.LogHandler.GetLastIndex())))
+		//fmt.Println("cmtUpdateto",thisServer.commitIndex ,"for:",thisServer.candidateId)
+
+			//fmt.Println("diff:",temp,thisServer.commitIndex)
 			//			if thisServer.candidateId == 5 {
 			//				fmt.Print(thisServer.candidateId,":",incomingReq.LeaderCommitIndex,":",thisServer.LogHandler.GetLastIndex())
 			//			}
 
 			if thisServer.commitIndex > temp {
-				actions = append(actions, COMMIT_TO_CLIENT{Index:thisServer.commitIndex, Data:thisServer.lastLog().Data})
+
+				for i := (temp + 1); i <= thisServer.commitIndex; i++ {
+					//fmt.Println("cmtMark",i)
+					actions = append(actions, COMMIT_TO_CLIENT{Index:i,
+						Data:thisServer.getLogAtIndex(i).Data, Err_code:0})
+				}
+				//actions = append(actions, COMMIT_TO_CLIENT{Index:thisServer.commitIndex, Data:thisServer.lastLog().Data})
 			}
 
 
 			actions = append(actions, RESET_ALARM_ELECTION_TIMEOUT{duration:thisServer.election_time_out})
 
 
-		}else if thisServer.SomeLastLogIsSameAs(incomingReq) { //after (decreasing) next index log have matched now
+
+		if !incomingReq.IsHeartbeat {
+		if thisServer.SomeLastLogIsSameAs(incomingReq) { //after (decreasing) next index log have matched now
 
 
-			//thisServer.lastLogIndex = incomingReq.LeaderLastLog.Index
 			thisServer.addThisEntry(incomingReq.LogToAdd)
-
 			appentResObj.makeResp(thisServer, incomingReq, true)
-//			appentResObj.From_CandidateId = thisServer.candidateId
-//			appentResObj.ResponderTerm = thisServer.term
-//			appentResObj.AppendSuccess = true
-//			appentResObj.To_CandidateId = incomingReq.From_CandidateId
-//			appentResObj.AppendedIndex = incomingReq.LogToAdd.Index
-
-			//			thisServer.commitIndex = int64(math.Min(float64(incomingReq.LeaderCommitIndex),
-			//				float64(thisServer.lastLogIndex)))
 			actions = append(actions, appentResObj)
-			//fmt.Println("AppIndex::", appentResObj)
 
-			actions = append(actions, RESET_ALARM_ELECTION_TIMEOUT{duration:thisServer.election_time_out})
+			//actions = append(actions, RESET_ALARM_ELECTION_TIMEOUT{duration:thisServer.election_time_out})
 
 
 		}else {
 
 			appentResObj.makeResp(thisServer, incomingReq, false)//leader on receiving this  will decrement nextindex4
-//			appentResObj.From_CandidateId = thisServer.candidateId
-//			appentResObj.ResponderTerm = thisServer.term
-//			appentResObj.AppendSuccess = false
-//			appentResObj.To_CandidateId = incomingReq.From_CandidateId
-//			appentResObj.AppendedIndex = incomingReq.LogToAdd.Index
+
 			actions = append(actions, appentResObj)
 			actions = append(actions, RESET_ALARM_ELECTION_TIMEOUT{duration:thisServer.election_time_out})//test for this
 
 		}
+	}
 	}
 	thisServer.debug_output2("appendactions:::", actions)
 	return actions
@@ -339,6 +329,7 @@ func (thisServer *SERVER_DATA) followerTimeoutRequest() (actions []interface{}) 
 
 
 func (thisServer *SERVER_DATA) leaderTimeoutRequest() (actions []interface{}) {
+	//fmt.Println("...")
 	actions = make([]interface{}, 0)
 
 	for i := 0; i < len(thisServer.candidates); i++ {
@@ -751,7 +742,7 @@ func (thisServer *SERVER_DATA) commitCheck() (actionElem []interface{}) {
 		if (counter) >= int(majorityCount(thisServer.candidates)) {
 			thisServer.commitIndex = tempV; //send commit to client here
 			for i := (tempC + 1); i <= tempV; i++ {
-				//fmt.Println("cmtMark")
+				//fmt.Println("cmtMark",i)
 				actionElem = append(actionElem, COMMIT_TO_CLIENT{Index:i,
 					Data:thisServer.getLogAtIndex(i).Data, Err_code:0})
 			}
