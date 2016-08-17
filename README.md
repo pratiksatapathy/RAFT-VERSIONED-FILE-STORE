@@ -1,5 +1,5 @@
 
-# THE RAFT CONSENSUS ALGORITHM IMPLEMENTATION ON A VOLATILE FILE STORE
+# THE RAFT CONSENSUS ALGORITHM IMPLEMENTATION ON A VOLATILE FILE STORE in Golang
 
 cs 733 project course project 
 
@@ -23,8 +23,9 @@ Project Description
 
 ### 1) Version file store
 
-A small but essential part of the project is the distributed version file server which can store and serv file on demand and supports concurrent access from multiple 
+A small but essential part of the project is the distributed version file server which can store and serve file on demand and supports concurrent access from multiple 
 client.
+Implementation involves log replication among five servers that can combinely tolerate failures until a majority of them are online.
 We describe the primary usage of the file store command interface below
 
 Usage
@@ -81,6 +82,7 @@ Here comes the role of the Version file store. The version file store receives a
 
 Below we present some of the exposed API that are provided by the RAFT layer for implementation in application which requires distributed reliability. In this case the Version file store.
 
+
 Raft Exposed API
 ---------------
 ```
@@ -111,6 +113,11 @@ Shutdown()
 
 }
 ```
+Automated testing
+------------------
+
+## 1 Each module was tested separately for various test cases to ensure correctness.
+## 2 Whole system was tested to ensure correctness, performance and reliability.
 
 
 
