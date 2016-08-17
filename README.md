@@ -115,8 +115,11 @@ Shutdown()
 ```
 Automated testing
 ------------------
+
+```
  1 Each module was tested separately for various test cases to ensure correctness.
  2 Whole system was tested to ensure correctness, performance and reliability.
+ ```
 
 
 
